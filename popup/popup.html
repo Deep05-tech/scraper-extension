@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>52WMB Data Scraper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-group">
+        <div class="logo-icon">⚡</div>
+        <h1 class="app-title">52WMB Data Scraper</h1>
+      </div>
+      <div id="connection-status" class="status-badge disconnected">
+        <span class="status-dot"></span>
+        <span class="status-text">Disconnected</span>
+      </div>
+    </header>
+
+    <!-- Website Not Connected Notice -->
+    <div id="warning-notice" class="notice-banner hidden">
+      <div class="notice-icon">⚠️</div>
+      <div class="notice-content">
+        Please open a 52wmb search result page first.<br>
+        <a href="https://en.52wmb.com/" target="_blank" class="notice-link">Go to en.52wmb.com &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <main id="main-panel" class="main-panel">
+      <!-- Status Card -->
+      <div class="scraping-state-card">
+        <div class="state-header">
+          <span class="state-label">Scraper Status</span>
+          <span id="scraping-badge" class="badge badge-idle">Idle</span>
+        </div>
+
+        <!-- Metrics Grid (Task 6 Debug Statistics) -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value" id="total-pages-val">0</div>
+            <div class="metric-label">Pages Scraped</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value accent" id="companies-count-val">0</div>
+            <div class="metric-label">Companies Found</div>
+          </div>
+          <div class="metric-card full-width">
+            <div class="metric-value muted" id="duplicates-count-val">0</div>
+            <div class="metric-label">Duplicates Removed</div>
+          </div>
+        </div>
+
+        <!-- Live Progress Indicator -->
+        <div id="progress-bar-container" class="progress-bar-container hidden">
+          <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Action Control Buttons -->
+      <div class="action-group">
+        <button id="btn-start" class="btn btn-primary">
+          <span class="btn-icon">▶</span>
+          <span>Start Scraping</span>
+        </button>
+        <button id="btn-stop" class="btn btn-danger hidden" disabled>
+          <span class="btn-icon">⏹</span>
+          <span>Stop Scraping</span>
+        </button>
+      </div>
+
+      <!-- Reset Controls -->
+      <div class="reset-group">
+        <button id="btn-reset" class="btn-text-reset">Reset / Clear Scraped Data</button>
+      </div>
+
+      <!-- Task 6 Debug Preview Section -->
+      <section id="preview-section" class="preview-section hidden">
+        <div class="section-title">
+          <span>Debug Preview (First 5 Records)</span>
+          <span class="company-tag" id="preview-count-tag">0 / 5</span>
+        </div>
+        <div id="preview-cards-container" class="preview-cards-container">
+          <!-- Dynamic cards inserted here by popup.js -->
+        </div>
+      </section>
+
+      <!-- Task 7 Export Section -->
+      <section id="export-section" class="export-section">
+        <div class="section-title">
+          <span>Export Scraped Data</span>
+          <span class="company-tag" id="export-count-tag">0 records</span>
+        </div>
+        <div class="export-buttons-grid">
+          <button id="btn-export-csv" class="btn btn-export" disabled>
+            <span class="export-icon">📄</span>
+            <span>Download CSV (7 Fields)</span>
+          </button>
+          <button id="btn-export-excel" class="btn btn-export" disabled>
+            <span class="export-icon">📊</span>
+            <span>Download Excel</span>
+          </button>
+          <button id="btn-export-json" class="btn btn-export" disabled>
+            <span class="export-icon">{ }</span>
+            <span>Download JSON</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>52WMB Data Scraper v2.1.0</span>
+      <span class="footer-dot">•</span>
+      <span>Manifest V3</span>
+    </footer>
+  </div>
+
+  <script src="../utils/storage.js"></script>
+  <script src="../utils/exporter.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

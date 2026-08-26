@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "52WMB Data Scraper",
+  "version": "2.0.0",
+  "description": "Extract company information and full profiles from 52WMB search results across all pages with multi-phase queue scraping and export to CSV, Excel, and JSON.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://en.52wmb.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "52WMB Data Scraper"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://en.52wmb.com/*"
+      ],
+      "js": [
+        "utils/storage.js",
+        "content/scraper.js",
+        "content/profileScraper.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
