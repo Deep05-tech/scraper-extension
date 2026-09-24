@@ -332,7 +332,7 @@ function findNextPageButton() {
 
 /**
  * Click Next Page button and wait until #company_list innerHTML changes from oldContent
- * @returns {Promise<boolean>}
+ * @returns {Promise<{success: boolean, timedOut?: boolean, reason?: string}>}
  */
 function navigateNextPageWithContentCheck() {
   return new Promise((resolve) => {
@@ -340,14 +340,14 @@ function navigateNextPageWithContentCheck() {
 
     if (!hasNextPage || !nextButton) {
       console.log('52WMB Scraper: Next button is unavailable or disabled.');
-      resolve(false);
+      resolve({ success: false, reason: 'No next page button found or button is disabled' });
       return;
     }
 
     const companyListContainer = document.querySelector(SELECTORS.companyListContainer);
     if (!companyListContainer) {
       console.error('52WMB Scraper: Cannot navigate next - #company_list container not found.');
-      resolve(false);
+      resolve({ success: false, reason: '#company_list container not found' });
       return;
     }
 
@@ -369,21 +369,21 @@ function navigateNextPageWithContentCheck() {
       cleanup();
       console.log('52WMB Scraper: Confirmed #company_list content changed! New page loaded.');
       // Brief pause to allow rendering to complete
-      setTimeout(() => resolve(true), 800);
+      setTimeout(() => resolve({ success: true }), 800);
     };
 
-    // Timeout safety net (10 seconds)
+    // Timeout safety net (15 seconds for slow network/rendering)
     timeoutTimer = setTimeout(() => {
       cleanup();
       const newContent = companyListContainer.innerHTML;
       if (newContent !== oldContent) {
-        console.log('52WMB Scraper: DOM content changed after timeout.');
-        resolve(true);
+        console.log('52WMB Scraper: DOM content changed after timeout check.');
+        resolve({ success: true });
       } else {
         console.warn('52WMB Scraper: Pagination timed out waiting for DOM change.');
-        resolve(false);
+        resolve({ success: false, timedOut: true, reason: 'DOM update timed out after 15s' });
       }
-    }, 10000);
+    }, 15000);
 
     // 1. Setup MutationObserver on #company_list
     observer = new MutationObserver(() => {
@@ -461,8 +461,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
-    navigateNextPageWithContentCheck().then((navigated) => {
-      sendResponse({ success: navigated });
+    navigateNextPageWithContentCheck().then((result) => {
+      sendResponse(result);
     });
     return true;
   }

@@ -24,8 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Control Buttons
   const btnStart = document.getElementById('btn-start');
+  const btnResume = document.getElementById('btn-resume');
   const btnStop = document.getElementById('btn-stop');
   const btnReset = document.getElementById('btn-reset');
+
+  // Session Modal Elements
+  const sessionModal = document.getElementById('session-modal');
+  const modalRecordsCount = document.getElementById('modal-records-count');
+  const modalPagesCount = document.getElementById('modal-pages-count');
+  const btnModalContinue = document.getElementById('btn-modal-continue');
+  const btnModalFresh = document.getElementById('btn-modal-fresh');
+  const btnModalCancel = document.getElementById('btn-modal-cancel');
 
   // Export Buttons
   const btnExportCSV = document.getElementById('btn-export-csv');
@@ -51,22 +60,80 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event Handlers
   // ==========================================
 
-  btnStart.addEventListener('click', () => {
+  btnStart.addEventListener('click', async () => {
+    const state = await getScrapingState();
+    const count = (state.companies || []).length;
+
+    if (count > 0) {
+      // Existing data exists: Prompt the user to choose
+      modalRecordsCount.textContent = count;
+      modalPagesCount.textContent = state.totalPagesScraped || 1;
+      sessionModal.classList.remove('hidden');
+    } else {
+      // No existing data: Start fresh immediately
+      executeStartScraping({ mode: 'fresh' });
+    }
+  });
+
+  btnResume.addEventListener('click', () => {
+    executeResumeScraping();
+  });
+
+  btnModalContinue.addEventListener('click', () => {
+    sessionModal.classList.add('hidden');
+    executeResumeScraping();
+  });
+
+  btnModalFresh.addEventListener('click', () => {
+    sessionModal.classList.add('hidden');
+    executeStartScraping({ mode: 'fresh' });
+  });
+
+  btnModalCancel.addEventListener('click', () => {
+    sessionModal.classList.add('hidden');
+  });
+
+  function executeStartScraping(options = {}) {
     btnStart.disabled = true;
-    chrome.runtime.sendMessage({ action: 'START_SCRAPING' }, (response) => {
+    if (btnResume) btnResume.disabled = true;
+
+    chrome.runtime.sendMessage({ action: 'START_SCRAPING', payload: options }, (response) => {
       if (chrome.runtime.lastError) {
         alert('Could not start scraper: ' + chrome.runtime.lastError.message);
         btnStart.disabled = false;
+        if (btnResume) btnResume.disabled = false;
         return;
       }
       if (response && !response.success) {
         alert(response.error || 'Failed to start scraper.');
         btnStart.disabled = false;
+        if (btnResume) btnResume.disabled = false;
       } else {
         refreshUIState();
       }
     });
-  });
+  }
+
+  function executeResumeScraping() {
+    if (btnResume) btnResume.disabled = true;
+    btnStart.disabled = true;
+
+    chrome.runtime.sendMessage({ action: 'RESUME_SCRAPING' }, (response) => {
+      if (chrome.runtime.lastError) {
+        alert('Could not resume scraper: ' + chrome.runtime.lastError.message);
+        if (btnResume) btnResume.disabled = false;
+        btnStart.disabled = false;
+        return;
+      }
+      if (response && !response.success) {
+        alert(response.error || 'Failed to resume scraper.');
+        if (btnResume) btnResume.disabled = false;
+        btnStart.disabled = false;
+      } else {
+        refreshUIState();
+      }
+    });
+  }
 
   btnStop.addEventListener('click', () => {
     btnStop.disabled = true;
@@ -128,15 +195,27 @@ document.addEventListener('DOMContentLoaded', () => {
       // Toggle Action Buttons & Progress Bar
       if (status === 'running') {
         btnStart.classList.add('hidden');
+        btnResume.classList.add('hidden');
         btnStop.classList.remove('hidden');
         btnStop.disabled = false;
         progressBarContainerEl.classList.remove('hidden');
       } else {
-        btnStart.classList.remove('hidden');
-        btnStart.disabled = false;
         btnStop.classList.add('hidden');
         btnStop.disabled = true;
         progressBarContainerEl.classList.add('hidden');
+
+        if (count > 0) {
+          // If we have collected data, show Resume as primary option alongside Start
+          btnResume.classList.remove('hidden');
+          btnResume.disabled = false;
+          btnStart.classList.remove('hidden');
+          btnStart.disabled = false;
+        } else {
+          btnResume.classList.add('hidden');
+          btnResume.disabled = true;
+          btnStart.classList.remove('hidden');
+          btnStart.disabled = false;
+        }
       }
 
       // Render Task 6 Debug Preview (First 5 records)

@@ -21,7 +21,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (action) {
     case 'START_SCRAPING':
-      handleStartScraping(sendResponse);
+      if (payload && payload.mode === 'resume') {
+        handleResumeScraping(sendResponse);
+      } else {
+        handleStartScraping(sendResponse);
+      }
+      return true;
+
+    case 'RESUME_SCRAPING':
+      handleResumeScraping(sendResponse);
       return true;
 
     case 'STOP_SCRAPING':
@@ -57,7 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 /**
- * Start multi-page scraping workflow
+ * Start fresh multi-page scraping workflow
  */
 async function handleStartScraping(sendResponse) {
   try {
@@ -86,6 +94,40 @@ async function handleStartScraping(sendResponse) {
     sendResponse({ success: true, message: 'Scraping started.' });
   } catch (err) {
     console.error('Error starting scraper:', err);
+    await saveScrapingState({ status: 'error', lastError: err.message });
+    sendResponse({ success: false, error: err.message });
+  }
+}
+
+/**
+ * Resume scraping workflow from where left off without clearing existing data
+ */
+async function handleResumeScraping(sendResponse) {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs || tabs.length === 0) {
+      sendResponse({ success: false, error: 'No active tab found.' });
+      return;
+    }
+
+    const currentTab = tabs[0];
+    if (!currentTab.url || !currentTab.url.includes('en.52wmb.com')) {
+      sendResponse({
+        success: false,
+        error: 'Please navigate to a 52wmb search result page (https://en.52wmb.com/*) first.'
+      });
+      return;
+    }
+
+    activeTabId = currentTab.id;
+
+    // Keep existing companies & stats, resume running state
+    await saveScrapingState({ status: 'running', lastError: null });
+
+    triggerTabScrape(currentTab.id);
+    sendResponse({ success: true, message: 'Scraping resumed.' });
+  } catch (err) {
+    console.error('Error resuming scraper:', err);
     await saveScrapingState({ status: 'error', lastError: err.message });
     sendResponse({ success: false, error: err.message });
   }
@@ -136,13 +178,20 @@ async function handlePageScraped(payload, senderTabId) {
     chrome.tabs.sendMessage(targetTabId, { action: 'GO_NEXT_PAGE' }, (response) => {
       if (chrome.runtime.lastError) {
         console.warn('GO_NEXT_PAGE message failed:', chrome.runtime.lastError.message);
+        saveScrapingState({ status: 'stopped', lastError: 'Navigation interrupted: ' + chrome.runtime.lastError.message });
       } else if (response && response.success) {
         console.log('Next page navigation confirmed. Triggering scrape on new page...');
         setTimeout(() => {
           triggerTabScrape(targetTabId);
         }, 600);
+      } else if (response && response.timedOut) {
+        console.warn('Next page load timed out. Setting state to stopped so user can resume once page loads.');
+        saveScrapingState({
+          status: 'stopped',
+          lastError: 'Page load timed out. You can click Resume once the page finishes loading.'
+        });
       } else {
-        console.log('No further next pages available or navigation failed. Completing scraper.');
+        console.log('No further next pages available or navigation finished. Completing scraper.');
         saveScrapingState({ status: 'completed' });
       }
     });

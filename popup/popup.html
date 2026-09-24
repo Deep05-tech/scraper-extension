@@ -66,6 +66,10 @@
           <span class="btn-icon">▶</span>
           <span>Start Scraping</span>
         </button>
+        <button id="btn-resume" class="btn btn-resume hidden">
+          <span class="btn-icon">⏯</span>
+          <span>Resume Scraping</span>
+        </button>
         <button id="btn-stop" class="btn btn-danger hidden" disabled>
           <span class="btn-icon">⏹</span>
           <span>Stop Scraping</span>
@@ -75,6 +79,31 @@
       <!-- Reset Controls -->
       <div class="reset-group">
         <button id="btn-reset" class="btn-text-reset">Reset / Clear Scraped Data</button>
+      </div>
+
+      <!-- Session Choice Modal -->
+      <div id="session-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <span class="modal-icon">📂</span>
+            <h3 class="modal-title">Existing Data Found</h3>
+          </div>
+          <p class="modal-desc">
+            You have <b id="modal-records-count">0</b> collected records (<b id="modal-pages-count">0</b> pages).
+          </p>
+          <p class="modal-subtext">How would you like to proceed?</p>
+          <div class="modal-buttons">
+            <button id="btn-modal-continue" class="btn btn-resume">
+              <span class="btn-icon">▶</span>
+              <span>Continue From Where Left Off</span>
+            </button>
+            <button id="btn-modal-fresh" class="btn btn-secondary">
+              <span class="btn-icon">🔄</span>
+              <span>Start Fresh (New File)</span>
+            </button>
+            <button id="btn-modal-cancel" class="btn-text-cancel">Cancel</button>
+          </div>
+        </div>
       </div>
 
       <!-- Task 6 Debug Preview Section -->
